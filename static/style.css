@@ -1,0 +1,4 @@
+body.light-mode { background: #f8f9fa; color: #212529; }
+body.dark-mode { background: #121212; color: #e0e0e0; }
+.navbar-light.bg-white { background-color: var(--bs-body-bg) !important; }
+.table-striped tbody tr:nth-of-type(odd) { background-color: var(--bs-light) !important; }
