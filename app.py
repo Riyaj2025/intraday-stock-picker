@@ -1,13 +1,18 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 from angel_api import login, get_intraday_candles
 from stock_logic import check_trade_score
 import pandas as pd
 import time
+import datetime
+import io
 
 app = Flask(__name__)
+top_50 = []
+last_scan = None
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    global top_50, last_scan
     top_50 = []
     if request.method == "POST":
         jwt = login()
@@ -37,10 +42,31 @@ def index():
             time.sleep(0.8)
 
         top_50 = sorted(picks, key=lambda x: x["score"], reverse=True)[:50]
+        last_scan = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    return render_template("index.html", picks=top_50)
+    return render_template("index.html", picks=top_50, last_scan=last_scan)
+
+@app.route("/download")
+def download():
+    fmt = request.args.get("format")
+    if not top_50:
+        return "No data to download. Please scan first.", 400
+
+    df = pd.DataFrame(top_50)
+    buf = io.BytesIO()
+
+    if fmt == "csv":
+        df.to_csv(buf, index=False)
+        buf.seek(0)
+        return send_file(buf, mimetype='text/csv', download_name="top_50_intraday.csv", as_attachment=True)
+    elif fmt == "xlsx":
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', download_name="top_50_intraday.xlsx", as_attachment=True)
+    else:
+        return "Invalid format", 400
+
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 5000))  # Render provides PORT env variable
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-
