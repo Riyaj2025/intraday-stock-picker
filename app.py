@@ -39,7 +39,7 @@ def index():
                         picks.append(result)
             except:
                 continue
-            time.sleep(0.8)
+            time.sleep(1.5)
 
         top_50 = sorted(picks, key=lambda x: x["score"], reverse=True)[:50]
         last_scan = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
